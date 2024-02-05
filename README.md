@@ -308,7 +308,7 @@ export default defineConfig({
 	plugins: [
 		react(),
 		federation({
-			name: "remoteApp",
+			name: "ui5Remote",
 			filename: "remoteEntry.js",
 			exposes: {
 				//I have added the DateTimePickerCard component here to expose for my host applications. Feel free to add other components if you want share other components as well
@@ -392,11 +392,11 @@ Take a look at this section.
 
 ```typescript
 remotes: {
-        remoteApp: "http://localhost:5001/assets/remoteEntry.js",
+        ui5Remote: "http://localhost:5001/assets/remoteEntry.js",
 			},
 ```
 
-In the remote section I have named the key as 'remoteApp'. You can name it anything but it is recomended to give a name that actualy represent your remote app.
+In the remote section I have named the key as 'ui5Remote'. You can name it anything but it is recomended to give a name that actualy represent your remote app.
 
 Take a look at the url. Remember we made sure that in the ui5-remote vite always gives us port 5001, Beacuse we need to specify the port where the remote app running.
 
@@ -404,7 +404,7 @@ Take a look at the url. Remember we made sure that in the ui5-remote vite always
 
 If you're using `typescript` like me. you need to follow an additional step. Otherwise you will face a typescript error. Let's see what we need to do in order to avoid that.
 
-Add a file in your host app root and name it like this `ui5Remote.d.ts`. I have named it remoteApp. As you can see in previous step my remote key was `ui5Remote`. If your remote key is 'someThing' name the file as `someThing.d.ts`
+Add a file in your host app root and name it like this `ui5Remote.d.ts`. I have named it ui5Remote. As you can see in previous step my remote key was `ui5Remote`. If your remote key is 'someThing' name the file as `someThing.d.ts`
 
 Now open the file and add this.
 
