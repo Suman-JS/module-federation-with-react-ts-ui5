@@ -414,6 +414,14 @@ declare module "ui5Remote/*";
 
 Again, my remote key was ui5Remote, that's why it says "ui5Remote/\*" if your key name was 'someThing' replace the 'ui5Remote' with the 'someThing'
 
+Now open `tsconfig.json` and add this line.
+
+```json
+"include": ["src", "ui5Remote.d.ts"],
+```
+
+This step is required. Otherwise you will get type error.
+
 **Step 11 :**
 
 All the configuration are done. Now you can consume the components that you shared from the ui5-remote. Let's see how to consume it.
@@ -444,6 +452,223 @@ const DateTimePickerCard = lazy(() => import("ui5Remote/DateTimePickerCard"));
 ```
 
 If your key name is 'someThing' just replace the 'ui5Remote' with 'someThing'.
+
+**Pro tip :**
+Its always a good idea to wrap those conponent, which you are consuming from `remote` with `Suspense` and `ErrorBoundary`. If you don't if any error occers your whole host application crash, Which is not a good user experience. You can also wrap your entire app in `ErrorBoundary`.
+
+Let's see how we can use `ErrorBoundary` and `Suspense` in our app.
+
+First create a react component and name it `ErrorBoundary`. In my case I'll name it `ErrorBoundary.tsx`. Now add this in the following in this component.
+
+```typescript
+import { Component, ErrorInfo, ReactNode } from "react";
+
+type ErrorBoundaryProps = {
+	children: ReactNode;
+	fallback: ReactNode;
+};
+
+type ErrorBoundaryState = {
+	hasError: boolean;
+};
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+	constructor(props: ErrorBoundaryProps) {
+		super(props);
+		this.state = { hasError: false };
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+		return { hasError: true };
+	}
+
+	componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+		console.error("Error caught by ErrorBoundary:", error, errorInfo);
+	}
+
+	render(): ReactNode {
+		if (this.state.hasError) {
+			return this.props.fallback;
+		}
+
+		return this.props.children;
+	}
+}
+
+export default ErrorBoundary;
+```
+
+Now let's use this `ErrorBoundary` and `Suspense`.
+
+```typescript
+import employeeIcon from "@ui5/webcomponents-icons/dist/employee.js";
+import accc from "@ui5/webcomponents-icons/dist/accessibility.js";
+import {
+	Avatar,
+	FlexBox,
+	FlexBoxAlignItems,
+	FlexBoxDirection,
+	FlexBoxJustifyContent,
+	Label,
+	List,
+	ListMode,
+	ListPropTypes,
+	ResponsivePopover,
+	ResponsivePopoverDomRef,
+	ShellBar,
+	ShellBarItem,
+	ShellBarItemPropTypes,
+	StandardListItem,
+} from "@ui5/webcomponents-react";
+import { lazy, useRef, useState, Suspense, useEffect } from "react";
+import {
+	getTheme,
+	setTheme,
+} from "@ui5/webcomponents-base/dist/config/Theme.js";
+import paletteIcon from "@ui5/webcomponents-icons/dist/palette.js";
+import sideItems from "./lib/data";
+import ErrorBoundary from "./components/ErrorBoundary";
+import "@ui5/webcomponents/dist/Assets.js";
+import "@ui5/webcomponents-fiori/dist/Assets.js";
+import "@ui5/webcomponents-react/dist/Assets.js";
+import "@ui5/webcomponents-icons/dist/AllIcons.js";
+
+const THEMES = [
+	{ key: "sap_horizon", value: "Morning Horizon (Light)" },
+	{ key: "sap_horizon_dark", value: "Evening Horizon (Dark)" },
+	{ key: "sap_horizon_hcb", value: "Horizon High Contrast Black" },
+	{ key: "sap_horizon_hcw", value: "Horizon High Contrast White" },
+];
+
+const DateTimePickerCard = lazy(() => import("ui5Remote/DateTimePickerCard"));
+const CustomComponent = lazy(() => import("ui5Remote/CustomComponent"));
+const CustomSideNav = lazy(() => import("ui5Remote/SideNavbar"));
+
+function App() {
+	const [currentTheme, setCurrentTheme] = useState(getTheme);
+
+	const popoverRef = useRef<ResponsivePopoverDomRef | null>(null);
+
+	const handleThemeSwitch: ListPropTypes["onSelectionChange"] = (e) => {
+		const { targetItem } = e.detail;
+		const selectedTheme: string = targetItem.dataset.key!;
+		setTheme(targetItem.dataset.key!);
+		setCurrentTheme(targetItem.dataset.key!);
+		localStorage.setItem("Theme", selectedTheme);
+	};
+	const handleThemeSwitchItemClick: ShellBarItemPropTypes["onClick"] = (e) => {
+		popoverRef.current?.showAt(e.detail.targetRef);
+	};
+
+	useEffect(() => {
+		const storedTheme: string | null = localStorage.getItem("Theme");
+		if (storedTheme) {
+			setCurrentTheme(storedTheme);
+			setTheme(storedTheme);
+		}
+	}, []);
+
+	return (
+		<>
+			<ShellBar
+				logo={
+					<img
+						src="/vite.svg"
+						alt={"Vite Logo"}
+					/>
+				}
+				primaryTitle="UI5 Host"
+				profile={<Avatar icon={employeeIcon} />}>
+				<ShellBarItem
+					icon={paletteIcon}
+					text="Change Theme"
+					onClick={handleThemeSwitchItemClick}
+				/>
+			</ShellBar>
+
+			<FlexBox
+				direction={FlexBoxDirection.Column}
+				justifyContent={FlexBoxJustifyContent.Center}
+				alignItems={FlexBoxAlignItems.Center}>
+				<Label>Select Date-time</Label>
+				<ErrorBoundary
+					fallback={
+						<div className="text-red-600 text-xl font-semibold">
+							Failed to load Date Time Picker
+						</div>
+					}>
+					<Suspense fallback={<div>Loading...</div>}>
+						<DateTimePickerCard />
+					</Suspense>
+				</ErrorBoundary>
+
+				<ErrorBoundary
+					fallback={
+						<div className="text-red-600 text-xl font-semibold">
+							Failded to load Button
+						</div>
+					}>
+					<Suspense fallback={<div>Loading...</div>}>
+						<CustomComponent
+							icon={accc}
+							cssStyles={
+								"text-black bg-blue-600 active:outline-none active:border-none p-2 rounded-md mt-4 hover:bg-blue-400 scale-100 hover:outline-none hover:border-none border-none hover:text-white scale-105 transition-all duration-300 ease-in-out"
+							}
+						/>
+					</Suspense>
+				</ErrorBoundary>
+				<ErrorBoundary
+					fallback={
+						<div className="text-red-600 text-xl font-semibold">
+							Failed to load Side Navigation Bar
+						</div>
+					}>
+					<Suspense fallback={<div>Loading...</div>}>
+						<CustomSideNav items={sideItems} />
+					</Suspense>
+				</ErrorBoundary>
+			</FlexBox>
+
+			<ResponsivePopover
+				ref={popoverRef}
+				className="popover">
+				<List
+					onSelectionChange={handleThemeSwitch}
+					headerText="Change Theme"
+					mode={ListMode.SingleSelect}>
+					{THEMES.map((theme) => (
+						<StandardListItem
+							key={theme.key}
+							selected={currentTheme === theme.key}
+							data-key={theme.key}>
+							{theme.value}
+						</StandardListItem>
+					))}
+				</List>
+			</ResponsivePopover>
+		</>
+	);
+}
+
+export default App;
+```
+
+as you can see in this example we are wraping every component with `ErrorBoundary` and `Suspense`. It will ensure that users will be notified if there any error or delay.
+
+```typescript
+				<ErrorBoundary
+					fallback={
+						<div className="text-red-600 text-xl font-semibold">
+							Some error occered
+						</div>
+					}>
+                    <Suspense fallback={"Loading.."}>
+                        <YourComponent/>
+                <ErrorBoundary>
+```
+
+in this you can using `fallback` in both `ErrorBoundary` and `Suspense`. If any error occers `ErrorBoundary`'s `fallback` will be displayed, similarly if there is any delay to load the component `Suspense`'s fallback will be displayed.
 
 **Step 12 :**
 
@@ -678,6 +903,246 @@ export default App;
 ```
 
 **NOTE :**<p style="color:red">Theme setup will be same in both remote and host.</p>
+
+## Now let's see how we can share a component from `remote` and modify in `host` as per our requirement and consume it.
+
+<h3 style="text-decoration:underline">Let's take a look at the remote</h3>
+
+**Step 1 :**
+Let's create a Side Navigation Bar on the remote. I'll name it `SideNavbar.tsx`.
+
+For this navigation we'll use `react-router-dom` v6. Let's install it.
+
+```bash
+pnpm add react-router-dom
+```
+
+Now open the `SideNavbar.tsx` and add the following
+
+```typescript
+import { useNavigate } from "react-router-dom";
+import {
+	SideNavigation,
+	SideNavigationItem,
+	SideNavigationSubItem,
+} from "@ui5/webcomponents-react";
+import "@ui5/webcomponents/dist/Assets.js";
+import "@ui5/webcomponents-fiori/dist/Assets.js";
+import "@ui5/webcomponents-react/dist/Assets.js";
+import "@ui5/webcomponents-icons/dist/AllIcons.js";
+
+type SubItemProps = {
+	icon: string;
+	text: string;
+	path: string;
+};
+
+type ItemProps = {
+	text: string;
+	icon: string;
+	path: string;
+	subItems?: SubItemProps[];
+};
+
+type SideNavbarProps = {
+	items: ItemProps[];
+};
+
+const SideNavbar = ({ items }: SideNavbarProps) => {
+	const navigate = useNavigate();
+
+	const handleNavigation = (location: string) => {
+		navigate(location);
+	};
+
+	return (
+		<aside className="rounded-lg">
+			<SideNavigation className="h-[88dvh] rounded-lg">
+				{items.map((item, index) => (
+					<SideNavigationItem
+						key={index}
+						icon={item.icon}
+						text={item.text}
+						selected={index === 0}
+						onClick={() => handleNavigation(item.path)}>
+						{item.subItems &&
+							item.subItems.map((subItem, subIndex) => (
+								<SideNavigationSubItem
+									key={subIndex}
+									icon={subItem.icon}
+									text={subItem.text}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleNavigation(item.path + subItem.path);
+									}}
+								/>
+							))}
+					</SideNavigationItem>
+				))}
+			</SideNavigation>
+		</aside>
+	);
+};
+
+export default SideNavbar;
+```
+
+As you can see in the above code block I'm using `useNavigate` hook from `react-router-dom` to navigate. I'm trying to make this as dynamic as possible.
+
+**Step 2 :**
+Let's consume this `SideNavbar`. I'll render this component on `App.tsx`.
+
+```typescript
+import routes from "./lib/data";
+
+function App() {
+	return (
+		<>
+			<div>
+				<SideNavbar items={routes} />
+			</div>
+		</>
+	);
+}
+export default App;
+```
+
+As you can see I'm renering this component and passing a prop as it was expecting.
+
+**Step 3 :**
+Let's take a look at the props I'm passing to this `SideNavbar` component.
+
+```typescript
+const routes = [
+	{
+		text: "Home",
+		icon: "home",
+		path: "/home",
+		subItems: [
+			{
+				icon: "subicon1",
+				text: "Subitem 1 for Home",
+				path: "/subitem1",
+			},
+			{
+				icon: "subicon2",
+				text: "Subitem 2 for Home",
+				path: "/subitem2",
+			},
+		],
+	},
+	{
+		text: "People",
+		icon: "group",
+		path: "/people",
+		subItems: [
+			{
+				icon: "subicon",
+				text: "Subitem for People",
+				path: "/SubitemPeople",
+			},
+		],
+	},
+	{
+		text: "Location",
+		icon: "locate-me",
+		path: "/location",
+	},
+];
+
+export default routes;
+```
+
+**Step 4 :**
+Now let's expose this `SideNavbar` component
+
+```typescript
+			exposes: {
+				"./SideNavbar": "./src/components/SideNavbar",
+			},
+```
+
+<h3 style="text-decoration:underline">Let's take a look at the host</h3>
+
+**Step 5 :**
+After the necessary configuration, let's consume the `SideNavbar` on the host.
+
+```typescript
+import { lazy } from "react";
+
+import sideItems from "./lib/data";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+const CustomSideNav = lazy(() => import("ui5Remote/SideNavbar"));
+
+function App() {
+	return (
+		<>
+			<ErrorBoundary
+				fallback={
+					<div className="text-red-600 text-xl font-semibold">
+						Failed to load Side Navigation Bar
+					</div>
+				}>
+				<Suspense fallback={<div>Loading...</div>}>
+					<CustomSideNav items={sideItems} />
+				</Suspense>
+			</ErrorBoundary>
+		</>
+	);
+}
+```
+
+**Step 6 :**
+To modify the `SideNavbar` as per our requirement all we have to do is modify the props. Let's see how do we modify it.
+
+```typescript
+const sideItems = [
+	{
+		text: "Something",
+		icon: "Something",
+		path: "/something",
+		subItems: [
+			{
+				icon: "subicon1",
+				text: "Subitem 1 for Something",
+				path: "/subitem1",
+			},
+			{
+				icon: "subicon2",
+				text: "Subitem 2 for Something",
+				path: "/subitem2",
+			},
+			{
+				icon: "subicon3",
+				text: "Subitem 3 for Something",
+				path: "/subitem3",
+			},
+		],
+	},
+	{
+		text: "Something Else",
+		icon: "somethingelse",
+		path: "/somethingelse",
+		subItems: [
+			{
+				icon: "subicon",
+				text: "Subitem for Something Else",
+				path: "/subitemforSomethingelse",
+			},
+		],
+	},
+	{
+		text: "Other Things",
+		icon: "otherthing",
+		path: "/otherthing",
+	},
+];
+
+export default sideItems;
+```
+
+**NOTE : To make this component work you need to wrap you `host` as well as `remote` app in `BrowserRouter` that comes from `react-router-dom` and also add `react-router-dom` in shared in the `vite.config.ts`.**
 
 ### Enjoy the Module Federation with UI5
 

@@ -1,10 +1,6 @@
 import employeeIcon from "@ui5/webcomponents-icons/dist/employee.js";
 import {
 	Avatar,
-	FlexBox,
-	FlexBoxAlignItems,
-	FlexBoxDirection,
-	FlexBoxJustifyContent,
 	Label,
 	List,
 	ListMode,
@@ -23,6 +19,9 @@ import {
 import paletteIcon from "@ui5/webcomponents-icons/dist/palette.js";
 import DateTimePickerCard from "./components/DateTimePickerCard";
 import { useEffect, useRef, useState } from "react";
+import CustomComponent from "./components/CustomComponent";
+import SideNavbar from "./components/SideNavbar";
+import routes from "./lib/data";
 
 function App() {
 	const THEMES = [
@@ -62,7 +61,7 @@ function App() {
 						alt={"Vite Logo"}
 					/>
 				}
-				primaryTitle="UI5 Host"
+				primaryTitle="UI5 Remote"
 				profile={<Avatar icon={employeeIcon} />}>
 				<ShellBarItem
 					icon={paletteIcon}
@@ -70,13 +69,33 @@ function App() {
 					onClick={handleThemeSwitchItemClick}
 				/>
 			</ShellBar>
-			<FlexBox
-				direction={FlexBoxDirection.Column}
-				justifyContent={FlexBoxJustifyContent.Center}
-				alignItems={FlexBoxAlignItems.Center}>
-				<Label>Select Date-Time</Label>
-				<DateTimePickerCard />
-			</FlexBox>
+			<div className="flex bg-gray-300 mt-1 ml-1 mr-1 rounded-xl p-3 gap-x-2">
+				<div>
+					<SideNavbar items={routes} />
+				</div>
+
+				<div className="flex flex-col flex-grow w-[90dvw] bg-red-400 rounded-lg p-2">
+					<p className="text-center text-2xl text-black font-bold mt-4">
+						Welcome to UI5 Remote
+					</p>
+					<div className="flex gap-x-3 text-center justify-center items-center mt-5">
+						<Label className="text-black font-semibold text-lg">
+							Select Date-Time
+						</Label>
+						<DateTimePickerCard />
+					</div>
+
+					<div className="flex justify-center">
+						<CustomComponent
+							icon={employeeIcon}
+							cssStyles={
+								"text-black bg-gray-200 active:outline-none focus:!outline-none active:border-none p-2 rounded-md mt-4 hover:bg-gray-600 scale-100 hover:outline-none hover:border-none border-none hover:text-white scale-105 transition-all duration-300 ease-in-out"
+							}
+						/>
+					</div>
+				</div>
+			</div>
+
 			<ResponsivePopover
 				ref={popoverRef}
 				className="popover">

@@ -10,8 +10,16 @@ export default defineConfig({
 			filename: "remoteEntry.js",
 			exposes: {
 				"./DateTimePickerCard": "./src/components/DateTimePickerCard",
+				"./CustomComponent": "./src/components/CustomComponent",
+				"./SideNavbar": "./src/components/SideNavbar",
 			},
-			shared: ["react", "react-dom", "tailwindcss", "@ui5/webcomponents-react"],
+			shared: [
+				"react",
+				"react-dom",
+				"tailwindcss",
+				"@ui5/webcomponents-react",
+				"react-router-dom",
+			],
 		}),
 	],
 	optimizeDeps: {

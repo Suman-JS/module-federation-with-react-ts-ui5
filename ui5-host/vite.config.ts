@@ -15,6 +15,7 @@ export default defineConfig({
 				"react-dom",
 				"tailwindcss",
 				"@ui5/webcomponents-react",
+				"react-router-dom",
 			],
 		}),
 	],
